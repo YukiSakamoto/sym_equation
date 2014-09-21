@@ -1,5 +1,6 @@
 #include <map>
 #include <boost/enable_shared_from_this.hpp>
+#include <cmath>
 
 typedef std::map<std::string, double> assignment_map_type;
 
@@ -98,3 +99,32 @@ struct S_Node_Variable : public S_Node_Unary
     std::string Name_;
 };
 
+//============================================================
+//  Unary Nodes (Function Nodes)
+//============================================================
+struct S_Node_Sin : public S_Node_Unary
+{
+    S_Node_Sin(boost::shared_ptr<S_Node> theta) : theta_(theta){;}
+    virtual double Eval(assignment_map_type const &values)
+    {
+        double phase( this->theta_->Eval(values) );
+        return std::sin(phase);
+    }
+    virtual boost::shared_ptr<S_Node> Differentiate(std::string name);
+    virtual std::string to_str(void) const;
+    boost::shared_ptr<S_Node> theta_;
+};
+
+struct S_Node_Cos : public S_Node_Unary
+{
+    S_Node_Cos(boost::shared_ptr<S_Node> theta) : theta_(theta){;}
+    virtual double Eval(assignment_map_type const &values)
+    {
+        double phase( this->theta_->Eval(values) );
+        return std::cos(phase);
+    }
+    virtual
+    boost::shared_ptr<S_Node> Differentiate(std::string name);
+    virtual std::string to_str(void) const;
+    boost::shared_ptr<S_Node> theta_;
+};

@@ -24,6 +24,18 @@ boost::shared_ptr<S_Node> S_Variable(std::string name)
     return retval;
 }
 
+boost::shared_ptr<S_Node> S_Sin(boost::shared_ptr<S_Node> var)
+{
+    boost::shared_ptr<S_Node> retval(new S_Node_Sin(var));
+    return retval;
+}
+
+boost::shared_ptr<S_Node> S_Cos(boost::shared_ptr<S_Node> var)
+{
+    boost::shared_ptr<S_Node> retval(new S_Node_Cos(var));
+    return retval;
+}
+
 boost::shared_ptr<S_Node> S_Plus(boost::shared_ptr<S_Node> lhs, boost::shared_ptr<S_Node> rhs)
 {
     boost::shared_ptr<S_Node> retval(new S_Node_Plus(lhs, rhs));
@@ -35,6 +47,7 @@ boost::shared_ptr<S_Node> S_Multiply(boost::shared_ptr<S_Node> lhs, boost::share
     boost::shared_ptr<S_Node> retval(new S_Node_Multily(lhs, rhs));
     return retval;
 }
+
 
 //============================================================
 //  Differentiate Functions
@@ -58,6 +71,30 @@ S_Node_Multily::Differentiate(std::string name)
                 S_Multiply(this->lhs_->Differentiate(name), this->rhs_),
                 S_Multiply(this->lhs_, this->rhs_->Differentiate(name))
                ) );
+    return diff;
+}
+
+boost::shared_ptr<S_Node>
+S_Node_Sin::Differentiate(std::string name)
+{
+    boost::shared_ptr<S_Node> diff
+        (S_Multiply (
+                     S_Cos( this->theta_ ),
+                     this->theta_->Differentiate(name)
+                    ));
+    return diff;
+}
+
+boost::shared_ptr<S_Node>
+S_Node_Cos::Differentiate(std::string name)
+{
+    boost::shared_ptr<S_Node> diff
+        (S_Multiply (
+                     S_Multiply( 
+                         S_Number(-1.0),
+                         S_Cos(this->theta_) ),
+                     this->theta_->Differentiate(name)
+                    ));
     return diff;
 }
 
@@ -158,6 +195,20 @@ std::string S_Node_Multily::to_str() const
     return s.str();
 }
 
+std::string S_Node_Sin::to_str() const
+{
+    std::stringstream s;
+    s << "(Sin " << this->theta_->to_str() << ")";
+    return s.str();
+}
+
+std::string S_Node_Cos::to_str() const
+{
+    std::stringstream s;
+    s << "(Cos " << this->theta_->to_str() << ")";
+    return s.str();
+}
+
 std::string S_Node_Number::to_str() const
 {
     std::stringstream s;
@@ -178,36 +229,50 @@ std::ostream& operator<<(std::ostream& os, boost::shared_ptr<S_Node> const &node
         return os;
 }
 
+//============================================================
+//  Operators
+//============================================================
+boost::shared_ptr<S_Node> operator*(boost::shared_ptr<S_Node> const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Multiply(lhs, rhs));
+    return p;
+}
+
+boost::shared_ptr<S_Node> operator+(boost::shared_ptr<S_Node> const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Plus(lhs, rhs));
+    return p;
+}
+
+#define VAR     S_Variable
+#define DOUBLE  S_Number
+
 
 int main(void)
 {
     assignment_map_type m;
     m.insert( std::make_pair(std::string("X"), double(5.0)) );
-    boost::shared_ptr<S_Node> expr2( S_Multiply(S_Number(6.0), S_Variable("X")) );
-    std::cout << expr2 << std::endl;
-    std::cout << "==== Eval ===" << std::endl;
-    std::cout << expr2->Eval(m) << std::endl;
-    std::cout << "==== Differentiate by X ===" << std::endl;
-    boost::shared_ptr<S_Node> diff( expr2->Differentiate("X") );
-    std::cout << diff << std::endl;
-    std::cout << "==== Differentiate & Reduction ===" << std::endl;
-    boost::shared_ptr<S_Node> reduct(diff->Reduction());
-    std::cout << reduct << std::endl;
 
-    std::cout << "==== Another Expression ===" << std::endl;
-    boost::shared_ptr<S_Node> expr3(
-            S_Multiply(
-                S_Multiply( S_Number(6.0), S_Variable("X") ), 
-                S_Variable("Y")
-                ));
-    assignment_map_type m3;
-    m3.insert( std::make_pair(std::string("X"), double(5.0)) );
-    std::cout << expr3 << std::endl;
-    std::cout << "==== Partial Differentiate by X ===" << std::endl;
-    std::cout << expr3->Differentiate("X")->Reduction()  << std::endl;
-    std::cout << "==== Partial Differentiate by Y ===" << std::endl;
-    std::cout << expr3->Differentiate("Y")->Reduction() << std::endl;
-    m3.insert( std::make_pair(std::string("Y"), double(2.0)) );
-    std::cout << expr3->Eval(m3) << std::endl;
+    std::cout << "* Expression1: f(X, Y) = 6 * X * Y" << std::endl;
+    boost::shared_ptr<S_Node> expr1( DOUBLE(6) * VAR("X") * VAR("Y") );
+    std::cout << expr1 << std::endl;
+    std::cout << "**    df/dX " << std::endl;
+    std::cout << expr1->Differentiate("X") << std::endl;
+    std::cout << "**    Reduction" << std::endl;
+    std::cout << expr1->Differentiate("X")->Reduction() << std::endl;
+    
+    std::cout << "============================================================" << std::endl;;
+    std::cout << "* Expression2: [f(X, Y) = sin(X * X + Y) + Y]" << std::endl;
+    boost::shared_ptr<S_Node> expr2( S_Sin( VAR("X") * VAR("X") + VAR("Y") ) + VAR("Y") );
+    std::cout << expr2 << std::endl;
+    std::cout << "** df/dX (and reduction)" << std::endl;
+    std::cout << expr2->Differentiate("X")->Reduction() << std::endl;
+    std::cout << "** df/dY (and reduction)" << std::endl;
+    std::cout << expr2->Differentiate("Y")->Reduction() << std::endl;
+    std::cout << "** df/dY | X = 0, Y = pi/2" << std::endl;
+    assignment_map_type m2;
+    m2.insert(std::make_pair("X", 0));
+    m2.insert(std::make_pair("Y", M_PI / 2) );
+    std::cout << expr2->Differentiate("Y")->Eval(m2) << std::endl;
     return 0;
 }
