@@ -47,6 +47,7 @@ S_Node_Plus::Differentiate(std::string name)
                 this->lhs_->Differentiate(name), 
                 this->rhs_->Differentiate(name)
                 ) );
+    return diff;
 }
 
 boost::shared_ptr<S_Node>
