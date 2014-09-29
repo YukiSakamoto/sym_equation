@@ -1,3 +1,7 @@
+#ifndef INCLUDE_GUARD_NODE_HPP
+#define INCLUDE_GUARD_NODE_HPP
+
+
 #include <map>
 #include <boost/enable_shared_from_this.hpp>
 #include <cmath>
@@ -185,9 +189,12 @@ boost::shared_ptr<S_Node> operator+(T const lhs, boost::shared_ptr<S_Node> const
     return p;
 }
 
-
 //============================================================
 //  Functions
 //============================================================
 boost::shared_ptr<S_Node> Differentiate(boost::shared_ptr<S_Node> expr, std::string var);
 double Eval(boost::shared_ptr<S_Node> expr, assignment_map_type const &table);
+
+std::ostream& operator<<(std::ostream& os, boost::shared_ptr<S_Node> const &node);
+
+#endif

@@ -1,6 +1,8 @@
 SET(CPP_FILES 
 	node.cpp
 	node_differentiate.cpp
+	node_reduction.cpp
+	node_prettyprinter.cpp
 )
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
