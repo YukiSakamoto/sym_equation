@@ -1,6 +1,7 @@
 #include <map>
 #include <boost/enable_shared_from_this.hpp>
 #include <cmath>
+#include <boost/type_traits.hpp>
 
 typedef std::map<std::string, double> assignment_map_type;
 
@@ -10,9 +11,9 @@ typedef std::map<std::string, double> assignment_map_type;
 struct S_Node : public boost::enable_shared_from_this<S_Node>
 {
     virtual double Eval(assignment_map_type const& values) { return 0.0; }
-    virtual boost::shared_ptr<S_Node> Differentiate(std::string name){};
+    virtual boost::shared_ptr<S_Node> Differentiate(std::string name){  throw;  }
     virtual size_t Num_Operand(void) {    throw;  }
-    virtual boost::shared_ptr<S_Node> Reduction(){}
+    virtual boost::shared_ptr<S_Node> Reduction(){throw;}
     virtual bool Is_Unary(void) {   return this->Num_Operand() == 1;    }
     virtual std::string to_str(void) const
     { return std::string(); }
@@ -56,9 +57,9 @@ struct S_Node_Plus : public S_Node_Binary
     virtual std::string to_str(void) const;
 };
 
-struct S_Node_Multily : public S_Node_Binary
+struct S_Node_Multiply : public S_Node_Binary
 {
-    S_Node_Multily(
+    S_Node_Multiply(
             boost::shared_ptr<S_Node> const &lhs, 
             boost::shared_ptr<S_Node> const &rhs)
         : S_Node_Binary(lhs, rhs) {}
@@ -128,3 +129,65 @@ struct S_Node_Cos : public S_Node_Unary
     virtual std::string to_str(void) const;
     boost::shared_ptr<S_Node> theta_;
 };
+
+//============================================================
+//  Factory Functions
+//============================================================
+boost::shared_ptr<S_Node> S_Number(double n);
+boost::shared_ptr<S_Node> S_Variable(std::string name);
+boost::shared_ptr<S_Node> S_Sin(boost::shared_ptr<S_Node> var);
+boost::shared_ptr<S_Node> S_Cos(boost::shared_ptr<S_Node> var);
+boost::shared_ptr<S_Node> S_Plus(boost::shared_ptr<S_Node> lhs, boost::shared_ptr<S_Node> rhs);
+boost::shared_ptr<S_Node> S_Multiply(boost::shared_ptr<S_Node> lhs, boost::shared_ptr<S_Node> rhs);
+
+//============================================================
+//  Operators
+//============================================================
+inline
+boost::shared_ptr<S_Node> operator*(boost::shared_ptr<S_Node> const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Multiply(lhs, rhs));
+    return p;
+}
+
+template <typename T> 
+boost::shared_ptr<S_Node> operator*(boost::shared_ptr<S_Node> const lhs, T const rhs) 
+{
+    boost::shared_ptr<S_Node> p(S_Multiply(lhs, S_Number(rhs)) );
+    return p;
+}
+
+template <typename T>
+boost::shared_ptr<S_Node> operator*(T const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Multiply(S_Number(lhs), rhs));
+    return p;
+}
+
+inline
+boost::shared_ptr<S_Node> operator+(boost::shared_ptr<S_Node> const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Plus(lhs, rhs));
+    return p;
+}
+
+template <typename T>
+boost::shared_ptr<S_Node> operator+(boost::shared_ptr<S_Node> const lhs, T const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Plus(lhs, S_Number(rhs) ));
+    return p;
+}
+
+template <typename T>
+boost::shared_ptr<S_Node> operator+(T const lhs, boost::shared_ptr<S_Node> const rhs)
+{
+    boost::shared_ptr<S_Node> p(S_Plus(S_Number(lhs), rhs));
+    return p;
+}
+
+
+//============================================================
+//  Functions
+//============================================================
+boost::shared_ptr<S_Node> Differentiate(boost::shared_ptr<S_Node> expr, std::string var);
+double Eval(boost::shared_ptr<S_Node> expr, assignment_map_type const &table);
